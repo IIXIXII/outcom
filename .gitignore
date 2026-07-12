@@ -1,0 +1,77 @@
+# Adapted from GitHub's VisualStudio.gitignore template:
+# https://github.com/github/gitignore/blob/main/VisualStudio.gitignore
+
+# Visual Studio and VS Code user state
+.vs/
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+!.vscode/*.code-snippets
+*.rsuser
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.csproj.user
+*.vssscc
+*.vspscc
+
+# Build outputs
+[Bb]in/
+[Oo]bj/
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+[Aa]rtifacts/
+*.pdb
+*.cache
+*.log
+*.tlog
+*.binlog
+MSBuild_Logs/
+
+# VSTO and ClickOnce publishing outputs
+publish/
+app.publish/
+*.publish.xml
+*.pubxml
+*.pubxml.user
+*.publishproj
+
+# Local development certificates and private keys
+*.pfx
+*.p12
+*.publishsettings
+
+# Tests and coverage
+[Tt]est[Rr]esult*/
+*.trx
+*.coverage
+*.coveragexml
+coverage*.json
+coverage*.xml
+coverage*.info
+
+# NuGet packages and generated restore files
+**/[Pp]ackages/*
+!**/[Pp]ackages/build/
+*.nupkg
+*.snupkg
+*.nuget.props
+*.nuget.targets
+
+# Temporary files
+*.tmp
+*.tmp_proj
+*~
+~$*
+
+# Installer build outputs
+*.cab
+*.msi
+*.msix
+*.msm
+*.msp
