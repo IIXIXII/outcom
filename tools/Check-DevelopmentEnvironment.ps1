@@ -1,4 +1,4 @@
-$ErrorActionPreference = 'Stop'
+﻿$ErrorActionPreference = 'Stop'
 
 Write-Host 'Outcom - vérification du poste de développement' -ForegroundColor Cyan
 
