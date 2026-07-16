@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8"?>
+<customUI xmlns="http://schemas.microsoft.com/office/2009/07/customui">
+  <ribbon>
+    <tabs>
+      <tab idMso="TabMail">
+        <group id="outcomHomeAssistedRepliesGroup"
+               label="Outcom"
+               autoScale="true">
+          <button id="outcomHomeReplyAndProposeButton"
+                  label="Répondre et proposer"
+                  imageMso="Reply"
+                  size="large"
+                  screentip="Répondre et proposer une réponse"
+                  supertip="Créer une réponse au courrier sélectionné, ouvrir son brouillon et lancer immédiatement une proposition Codex en arrière-plan."
+                  onAction="ReplyAndPropose" />
+          <button id="outcomHomeReplyAllAndProposeButton"
+                  label="Répondre à tous et proposer"
+                  imageMso="ReplyAll"
+                  size="large"
+                  screentip="Répondre à tous et proposer une réponse"
+                  supertip="Créer une réponse à tous au courrier sélectionné, ouvrir son brouillon et lancer immédiatement une proposition Codex en arrière-plan."
+                  onAction="ReplyAllAndPropose" />
+        </group>
+      </tab>
+      <tab id="outcomTab" label="Outcom">
+        <group id="outcomCodexGroup" label="Codex">
+          <button id="outcomOpenCodexPaneButton"
+                  label="Ouvrir Codex"
+                  imageMso="ReadingPaneRight"
+                  size="large"
+                  screentip="Afficher le volet Codex"
+                  supertip="Ouvrir ou masquer la conversation Codex dans cette fenêtre Outlook."
+                  onAction="ToggleCodexPane" />
+          <button id="outcomManageCodexButton"
+                  label="Configurer Codex"
+                  imageMso="CurrentViewSettings"
+                  size="large"
+                  screentip="Configurer Codex"
+                  supertip="Afficher le compte ChatGPT, le runtime Codex et les limites disponibles."
+                  onAction="OpenCodexConnection" />
+          <button id="outcomCodexContextButton"
+                  label="Contexte Codex"
+                  imageMso="AccountSettings"
+                  size="large"
+                  screentip="Définir le contexte Codex"
+                  supertip="Choisir le modèle, la profondeur de raisonnement et les directives générales de toutes les conversations Outcom."
+                  onAction="OpenCodexContext" />
+          <button id="outcomTestCodexButton"
+                  label="tester Codex"
+                  imageMso="RefreshView"
+                  screentip="Tester Codex"
+                  supertip="Vérifier la connexion du profil Codex isolé d’Outcom."
+                  onAction="TestCodexConnection" />
+          <button id="outcomDisconnectCodexButton"
+                  label="Déconnexion de Codex"
+                  imageMso="FileCloseAndLogOff"
+                  screentip="Déconnexion de Codex"
+                  supertip="Déconnecter le profil Codex isolé utilisé par Outcom."
+                  onAction="DisconnectCodex" />
+        </group>
+        <group id="outcomAssistedRepliesGroup" label="Réponses assistées">
+          <button id="outcomReplyAndProposeButton"
+                  label="Répondre et proposer"
+                  imageMso="Reply"
+                  size="large"
+                  screentip="Répondre et proposer une réponse"
+                  supertip="Créer une réponse au courrier sélectionné, ouvrir son brouillon et lancer immédiatement une proposition Codex en arrière-plan."
+                  onAction="ReplyAndPropose" />
+          <button id="outcomReplyAllAndProposeButton"
+                  label="Répondre à tous et proposer"
+                  imageMso="ReplyAll"
+                  size="large"
+                  screentip="Répondre à tous et proposer une réponse"
+                  supertip="Créer une réponse à tous au courrier sélectionné, ouvrir son brouillon et lancer immédiatement une proposition Codex en arrière-plan."
+                  onAction="ReplyAllAndPropose" />
+        </group>
+      </tab>
+    </tabs>
+    <contextualTabs>
+      <tabSet idMso="TabComposeTools">
+        <tab idMso="TabMessage">
+          <group id="outcomInlineComposeGroup"
+                 label="Outcom"
+                 autoScale="true">
+            <button id="outcomInlineProposeReplyButton"
+                    label="Proposer une réponse"
+                    imageMso="Reply"
+                    size="large"
+                    screentip="Proposer une réponse avec Codex"
+                    supertip="Lancer en arrière-plan un message complet à partir de la zone de réponse située en haut du brouillon. Outcom s'arrête à la signature Outlook ou à la section du message cité et remplace le projet uniquement si cette zone est restée inchangée."
+                    onAction="ProposeComposeReply" />
+          </group>
+        </tab>
+      </tabSet>
+    </contextualTabs>
+  </ribbon>
+</customUI>

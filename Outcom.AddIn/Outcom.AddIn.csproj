@@ -26,6 +26,7 @@
     <NoStandardLibraries>false</NoStandardLibraries>
     <RootNamespace>Outcom.AddIn</RootNamespace>
     <AssemblyName>Outcom.AddIn</AssemblyName>
+    <ApplicationIcon>Assets\Outcom.ico</ApplicationIcon>
     <LoadBehavior>3</LoadBehavior>
     <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
     <DefineConstants>VSTO40</DefineConstants>
@@ -104,12 +105,20 @@
     <Reference Include="System" />
     <Reference Include="System.Data" />
     <Reference Include="System.Drawing" />
+    <Reference Include="System.IO.Compression" />
+    <Reference Include="System.IO.Compression.FileSystem" />
+    <Reference Include="System.Security" />
+    <Reference Include="System.Web.Extensions" />
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="MsgReader" Version="5.7.2" />
+    <PackageReference Include="PdfPig" Version="0.1.15" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="Microsoft.Office.Tools.v4.0.Framework, Version=10.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
@@ -188,9 +197,40 @@
     can be found.
   -->
   <ItemGroup>
+    <Compile Include="CodexAppServerClient.cs" />
+    <Compile Include="CodexAppServerModels.cs" />
+    <Compile Include="CodexConnectionForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="CodexComposeRequestManager.cs" />
+    <Compile Include="ConversationContextDocument.cs" />
+    <Compile Include="DocumentContextExtractor.cs" />
+    <Compile Include="CodexExecutableLocator.cs" />
+    <Compile Include="CodexOperationTracker.cs" />
+    <Compile Include="CodexService.cs" />
+    <Compile Include="CodexTaskPaneControl.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="CodexTaskPaneManager.cs" />
+    <Compile Include="LocalLogger.cs" />
+    <Compile Include="OutlookMailContext.cs" />
+    <Compile Include="OutlookVirtualFileDrop.cs" />
+    <Compile Include="OutlookComposeContext.cs" />
+    <Compile Include="OutcomGlobalContext.cs" />
+    <Compile Include="OutcomBranding.cs" />
+    <Compile Include="OutcomGlobalContextForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="OutcomRibbon.cs" />
     <Compile Include="Properties\AssemblyInfo.cs">
       <SubType>Code</SubType>
     </Compile>
+    <EmbeddedResource Include="Assets\Outcom.ico">
+      <LogicalName>Outcom.AddIn.Assets.Outcom.ico</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="OutcomRibbon.xml" />
+    <EmbeddedResource Include="OutcomReadRibbon.xml" />
+    <EmbeddedResource Include="OutcomComposeRibbon.xml" />
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
@@ -201,6 +241,7 @@
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
     <None Include="Outcom.AddIn_1_TemporaryKey.pfx" />
+    <None Include="Outcom.AddIn_2_TemporaryKey.pfx" />
     <None Include="Outcom.AddIn_TemporaryKey.pfx" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
@@ -230,10 +271,12 @@
     <SignManifests>true</SignManifests>
   </PropertyGroup>
   <PropertyGroup>
-    <ManifestCertificateThumbprint>CBBF93FEEB03E84607B983B796DCCE2A668D3347</ManifestCertificateThumbprint>
+    <ManifestCertificateThumbprint Condition="'$(OUTCOM_MANIFEST_CERTIFICATE_THUMBPRINT)' == ''">796C8AA198C78F386B12816F8F912385C17430CD</ManifestCertificateThumbprint>
+    <ManifestCertificateThumbprint Condition="'$(OUTCOM_MANIFEST_CERTIFICATE_THUMBPRINT)' != ''">$(OUTCOM_MANIFEST_CERTIFICATE_THUMBPRINT)</ManifestCertificateThumbprint>
   </PropertyGroup>
   <PropertyGroup>
-    <ManifestKeyFile>Outcom.AddIn_1_TemporaryKey.pfx</ManifestKeyFile>
+    <ManifestKeyFile Condition="'$(OUTCOM_MANIFEST_KEY_FILE)' == ''">Outcom.AddIn_2_TemporaryKey.pfx</ManifestKeyFile>
+    <ManifestKeyFile Condition="'$(OUTCOM_MANIFEST_KEY_FILE)' != ''">$(OUTCOM_MANIFEST_KEY_FILE)</ManifestKeyFile>
   </PropertyGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- Include additional build rules for an Office application add-in. -->

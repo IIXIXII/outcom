@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<customUI xmlns="http://schemas.microsoft.com/office/2009/07/customui">
+  <ribbon>
+    <tabs>
+      <tab idMso="TabReadMessage">
+        <group id="outcomReadAssistedRepliesGroup"
+               label="Outcom"
+               autoScale="true">
+          <button id="outcomReadReplyAndProposeButton"
+                  label="Répondre et proposer"
+                  imageMso="Reply"
+                  size="large"
+                  screentip="Répondre et proposer une réponse"
+                  supertip="Créer une réponse à ce courrier, ouvrir son brouillon et lancer immédiatement une proposition Codex en arrière-plan."
+                  onAction="ReplyAndPropose" />
+          <button id="outcomReadReplyAllAndProposeButton"
+                  label="Répondre à tous et proposer"
+                  imageMso="ReplyAll"
+                  size="large"
+                  screentip="Répondre à tous et proposer une réponse"
+                  supertip="Créer une réponse à tous à ce courrier, ouvrir son brouillon et lancer immédiatement une proposition Codex en arrière-plan."
+                  onAction="ReplyAllAndPropose" />
+        </group>
+      </tab>
+    </tabs>
+  </ribbon>
+</customUI>
