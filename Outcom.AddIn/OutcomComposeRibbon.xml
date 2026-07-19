@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<customUI xmlns="http://schemas.microsoft.com/office/2009/07/customui">
+<customUI xmlns="http://schemas.microsoft.com/office/2009/07/customui"
+          onLoad="Ribbon_Load">
   <ribbon>
     <tabs>
       <tab idMso="TabNewMailMessage">
@@ -11,6 +12,12 @@
                   screentip="Proposer une réponse avec Codex"
                   supertip="Lancer en arrière-plan un message complet à partir de la zone de réponse située en haut du brouillon. Outcom s'arrête à la signature Outlook ou à la section du message cité et remplace le projet uniquement si cette zone est restée inchangée."
                   onAction="ProposeComposeReply" />
+          <box id="outcomComposeActivityCountersBox" boxStyle="vertical">
+            <labelControl id="outcomComposeActiveOperationsLabel"
+                          getLabel="GetActiveOperationsLabel" />
+            <labelControl id="outcomComposeCompletedOperationsLabel"
+                          getLabel="GetCompletedOperationsLabel" />
+          </box>
         </group>
       </tab>
     </tabs>

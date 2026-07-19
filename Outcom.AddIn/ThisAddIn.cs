@@ -15,6 +15,7 @@ namespace Outcom.AddIn
         private CodexService codexService;
         private CodexTaskPaneManager codexTaskPaneManager;
         private CodexComposeRequestManager codexComposeRequestManager;
+        private OutcomRibbon outcomRibbon;
         private int shutdownCompleted;
 
         internal CodexService GetCodexService()
@@ -143,6 +144,13 @@ namespace Outcom.AddIn
                 return;
             }
 
+            OutcomRibbon ribbonToDispose = outcomRibbon;
+            outcomRibbon = null;
+            if (ribbonToDispose != null)
+            {
+                ribbonToDispose.Dispose();
+            }
+
             CodexComposeRequestManager composeRequestManagerToDispose;
             lock (codexComposeRequestSyncRoot)
             {
@@ -211,7 +219,9 @@ namespace Outcom.AddIn
 
         protected override Office.IRibbonExtensibility CreateRibbonExtensibilityObject()
         {
-            return new OutcomRibbon();
+            var ribbon = new OutcomRibbon(codexOperationTracker);
+            outcomRibbon = ribbon;
+            return ribbon;
         }
 
         #region Code généré par VSTO

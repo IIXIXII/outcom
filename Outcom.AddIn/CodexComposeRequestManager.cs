@@ -76,6 +76,14 @@ namespace Outcom.AddIn
                 throw new ArgumentNullException(nameof(context));
             }
 
+            if (!context.HasReplySource &&
+                string.IsNullOrWhiteSpace(context.DraftBody))
+            {
+                throw new InvalidOperationException(
+                    "Outcom n'a détecté ni message source ni orientation dans le brouillon. " +
+                    "La proposition n'a pas été lancée afin d'éviter une réponse hors contexte.");
+            }
+
             string prompt = context.BuildPrompt();
             if (string.IsNullOrWhiteSpace(prompt))
             {
@@ -89,6 +97,10 @@ namespace Outcom.AddIn
                     "Une proposition Codex est déjà en cours pour ce message.");
             }
 
+            bool insertAtBeginningOnConflict = _addIn
+                .GetCodexService()
+                .GetGlobalContext()
+                .InsertProposalAtBeginningOnConflict;
             var request = new ComposeRequest(
                 this,
                 identity,
@@ -96,9 +108,10 @@ namespace Outcom.AddIn
                 explorer,
                 draft,
                 prompt,
-                BuildDescription(context.Subject),
+                BuildDescription(context.Subject, context.IsForward),
                 context.ReplaceResponseSection,
-                context.ExpectedResponseDraft);
+                context.ExpectedResponseDraft,
+                insertAtBeginningOnConflict);
             _requests.Add(identity, request);
             try
             {
@@ -112,7 +125,7 @@ namespace Outcom.AddIn
             }
         }
 
-        private static string BuildDescription(string subject)
+        private static string BuildDescription(string subject, bool isForward)
         {
             string value = string.IsNullOrWhiteSpace(subject)
                 ? "message sans objet"
@@ -122,7 +135,9 @@ namespace Outcom.AddIn
                 value = value.Substring(0, 67) + "…";
             }
 
-            return "Proposition de réponse — " + value;
+            return (isForward
+                ? "Message d'accompagnement — "
+                : "Proposition de réponse — ") + value;
         }
 
         private void DispatchCompletion(
@@ -219,32 +234,35 @@ namespace Outcom.AddIn
 
                 try
                 {
+                    bool insertedAtBeginning;
                     if (request.Inspector != null)
                     {
-                        OutlookComposeContext.ApplyProposal(
+                        insertedAtBeginning = OutlookComposeContext.ApplyProposal(
                             request.Inspector,
                             request.Draft,
                             result.Text,
                             request.ReplaceResponseDraft,
-                            request.ExpectedResponseDraft);
+                            request.ExpectedResponseDraft,
+                            request.InsertAtBeginningOnConflict);
                     }
                     else
                     {
-                        OutlookComposeContext.ApplyProposal(
+                        insertedAtBeginning = OutlookComposeContext.ApplyProposal(
                             request.Explorer,
                             request.Draft,
                             result.Text,
                             request.ReplaceResponseDraft,
-                            request.ExpectedResponseDraft);
+                            request.ExpectedResponseDraft,
+                            request.InsertAtBeginningOnConflict);
                     }
 
-                    request.Operation.Complete(request.ReplaceResponseDraft
-                        ? "projet remplacé par le message complet"
-                        : "proposition insérée au début du message");
+                    request.Operation.Complete(insertedAtBeginning
+                        ? "proposition insérée au début du message"
+                        : "projet remplacé par le message complet");
                     LocalLogger.Info(
-                        request.ReplaceResponseDraft
-                            ? "Projet de réponse remplacé par le message complet généré."
-                            : "Proposition Codex insérée dans un message en cours de rédaction.");
+                        insertedAtBeginning
+                            ? "Proposition Codex insérée au début du message."
+                            : "Projet de réponse remplacé par le message complet généré.");
                 }
                 catch (InvalidOperationException exception)
                 {
@@ -356,7 +374,8 @@ namespace Outcom.AddIn
                 string prompt,
                 string description,
                 bool replaceResponseDraft,
-                string expectedResponseDraft)
+                string expectedResponseDraft,
+                bool insertAtBeginningOnConflict)
             {
                 _manager = manager;
                 Identity = identity;
@@ -367,6 +386,7 @@ namespace Outcom.AddIn
                 _description = description;
                 ReplaceResponseDraft = replaceResponseDraft;
                 ExpectedResponseDraft = expectedResponseDraft;
+                InsertAtBeginningOnConflict = insertAtBeginningOnConflict;
             }
 
             internal long Identity { get; private set; }
@@ -382,6 +402,8 @@ namespace Outcom.AddIn
             internal bool ReplaceResponseDraft { get; private set; }
 
             internal string ExpectedResponseDraft { get; private set; }
+
+            internal bool InsertAtBeginningOnConflict { get; private set; }
 
             internal RequestStopReason StopReason
             {
@@ -407,7 +429,7 @@ namespace Outcom.AddIn
 
                 Task<CodexTurnResult> task = _manager._addIn
                     .GetCodexService()
-                    .GenerateTextAsync(_prompt, null, _cancellation.Token);
+                    .GenerateComposeReplyAsync(_prompt, null, _cancellation.Token);
                 task.ContinueWith(
                     completedTask => _manager.DispatchCompletion(this, completedTask),
                     CancellationToken.None,

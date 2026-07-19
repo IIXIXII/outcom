@@ -21,6 +21,7 @@ namespace Outcom.AddIn
         private readonly TextBox _workContextTextBox;
         private readonly TextBox _vocabularyTextBox;
         private readonly TextBox _instructionsTextBox;
+        private readonly CheckBox _insertProposalAtBeginningOnConflictCheckBox;
         private readonly Label _characterCountLabel;
         private readonly Button _saveButton;
 
@@ -151,6 +152,9 @@ namespace Outcom.AddIn
                 _initialContext.CrossConversationInstructions,
                 "Instructions transversales générales",
                 out _instructionsTextBox));
+            tabs.TabPages.Add(CreateBehaviorTab(
+                _initialContext.InsertProposalAtBeginningOnConflict,
+                out _insertProposalAtBeginningOnConflictCheckBox));
             root.Controls.Add(tabs, 0, 2);
 
             _characterCountLabel = new Label
@@ -435,6 +439,56 @@ namespace Outcom.AddIn
             return page;
         }
 
+        private static TabPage CreateBehaviorTab(
+            bool insertProposalAtBeginningOnConflict,
+            out CheckBox insertProposalAtBeginningOnConflictCheckBox)
+        {
+            var page = new TabPage("Comportement")
+            {
+                Padding = new Padding(12),
+                UseVisualStyleBackColor = true
+            };
+            var layout = new TableLayoutPanel
+            {
+                ColumnCount = 1,
+                RowCount = 2,
+                Dock = DockStyle.Top,
+                AutoSize = true
+            };
+            layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
+            layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+            layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+            page.Controls.Add(layout);
+
+            insertProposalAtBeginningOnConflictCheckBox = new CheckBox
+            {
+                AutoSize = true,
+                Checked = insertProposalAtBeginningOnConflict,
+                Margin = new Padding(0, 0, 0, 10),
+                Text =
+                    "Si le remplacement précis est impossible, insérer la proposition " +
+                    "au début du message",
+                AccessibleName =
+                    "Insérer la proposition au début du message en cas de conflit"
+            };
+            layout.Controls.Add(insertProposalAtBeginningOnConflictCheckBox, 0, 0);
+            layout.Controls.Add(
+                new Label
+                {
+                    AutoSize = true,
+                    Dock = DockStyle.Fill,
+                    ForeColor = SystemColors.GrayText,
+                    Margin = Padding.Empty,
+                    Text =
+                        "Outcom conserve alors tout le contenu existant et ajoute la proposition " +
+                        "tout en haut. Ce repli reste interdit si le brouillon a été envoyé, " +
+                        "fermé ou remplacé par un autre message."
+                },
+                0,
+                1);
+            return page;
+        }
+
         private void EditorTextChanged(object sender, EventArgs e)
         {
             UpdateCharacterCount();
@@ -498,7 +552,9 @@ namespace Outcom.AddIn
                     VocabularyGuidelines = _vocabularyTextBox.Text,
                     CrossConversationInstructions = _instructionsTextBox.Text,
                     ModelId = selectedModel.Id,
-                    ReasoningEffort = selectedEffort.Value
+                    ReasoningEffort = selectedEffort.Value,
+                    InsertProposalAtBeginningOnConflict =
+                        _insertProposalAtBeginningOnConflictCheckBox.Checked
                 });
             }
             catch (ArgumentException exception)

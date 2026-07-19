@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<customUI xmlns="http://schemas.microsoft.com/office/2009/07/customui">
+<customUI xmlns="http://schemas.microsoft.com/office/2009/07/customui"
+          onLoad="Ribbon_Load">
   <ribbon>
     <tabs>
       <tab idMso="TabReadMessage">
@@ -20,6 +21,12 @@
                   screentip="Répondre à tous et proposer une réponse"
                   supertip="Créer une réponse à tous à ce courrier, ouvrir son brouillon et lancer immédiatement une proposition Codex en arrière-plan."
                   onAction="ReplyAllAndPropose" />
+          <box id="outcomReadActivityCountersBox" boxStyle="vertical">
+            <labelControl id="outcomReadActiveOperationsLabel"
+                          getLabel="GetActiveOperationsLabel" />
+            <labelControl id="outcomReadCompletedOperationsLabel"
+                          getLabel="GetCompletedOperationsLabel" />
+          </box>
         </group>
       </tab>
     </tabs>

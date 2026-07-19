@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<customUI xmlns="http://schemas.microsoft.com/office/2009/07/customui">
+<customUI xmlns="http://schemas.microsoft.com/office/2009/07/customui"
+          onLoad="Ribbon_Load">
   <ribbon>
     <tabs>
       <tab idMso="TabMail">
@@ -20,6 +21,12 @@
                   screentip="Répondre à tous et proposer une réponse"
                   supertip="Créer une réponse à tous au courrier sélectionné, ouvrir son brouillon et lancer immédiatement une proposition Codex en arrière-plan."
                   onAction="ReplyAllAndPropose" />
+          <box id="outcomHomeActivityCountersBox" boxStyle="vertical">
+            <labelControl id="outcomHomeActiveOperationsLabel"
+                          getLabel="GetActiveOperationsLabel" />
+            <labelControl id="outcomHomeCompletedOperationsLabel"
+                          getLabel="GetCompletedOperationsLabel" />
+          </box>
         </group>
       </tab>
       <tab id="outcomTab" label="Outcom">
@@ -57,6 +64,18 @@
                   screentip="Déconnexion de Codex"
                   supertip="Déconnecter le profil Codex isolé utilisé par Outcom."
                   onAction="DisconnectCodex" />
+          <button id="outcomAboutButton"
+                  label="À propos d’Outcom"
+                  imageMso="Info"
+                  screentip="À propos d’Outcom"
+                  supertip="Afficher la version, la date de compilation et les informations techniques d’Outcom."
+                  onAction="OpenAbout" />
+          <box id="outcomTabActivityCountersBox" boxStyle="vertical">
+            <labelControl id="outcomTabActiveOperationsLabel"
+                          getLabel="GetActiveOperationsLabel" />
+            <labelControl id="outcomTabCompletedOperationsLabel"
+                          getLabel="GetCompletedOperationsLabel" />
+          </box>
         </group>
         <group id="outcomAssistedRepliesGroup" label="Réponses assistées">
           <button id="outcomReplyAndProposeButton"
@@ -89,6 +108,12 @@
                     screentip="Proposer une réponse avec Codex"
                     supertip="Lancer en arrière-plan un message complet à partir de la zone de réponse située en haut du brouillon. Outcom s'arrête à la signature Outlook ou à la section du message cité et remplace le projet uniquement si cette zone est restée inchangée."
                     onAction="ProposeComposeReply" />
+            <box id="outcomInlineActivityCountersBox" boxStyle="vertical">
+              <labelControl id="outcomInlineActiveOperationsLabel"
+                            getLabel="GetActiveOperationsLabel" />
+              <labelControl id="outcomInlineCompletedOperationsLabel"
+                            getLabel="GetCompletedOperationsLabel" />
+            </box>
           </group>
         </tab>
       </tabSet>

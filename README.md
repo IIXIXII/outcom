@@ -53,13 +53,18 @@ Le complément `Outcom` doit être présent et coché. Cette validation initiale
 
 ## Fonctionnalités actuelles
 
+- La version actuelle d’Outcom est **0.1.0**, centralisée dans la propriété `OutcomVersion` du projet. La commande **À propos d’Outcom**, dans l’onglet **Outcom**, affiche la version, la date de compilation embarquée dans le binaire, l’architecture active, le mode de connexion à ChatGPT, le journal local et la licence.
 - Le démarrage et l'arrêt du complément sont journalisés dans `%LOCALAPPDATA%\Outcom\Logs\outcom.log`.
 - Un onglet **Outcom** est affiché dans la fenêtre principale d'Outlook pour ouvrir le volet, configurer la connexion et définir le **Contexte Codex** ; ses actions utilisent les icônes natives d'Office.
 - L'icône générale Outcom identifie le complément, les fenêtres de configuration et l'en-tête du volet ; elle n'est pas utilisée pour représenter les actions.
 - Sous l'état et le Contexte Codex, le volet réserve initialement 40 % de sa hauteur utile aux activités en cours et récentes, puis 60 % aux conversations. Cette seconde partie consacre 20 % à la liste des conversations et 40 % à la conversation sélectionnée ; dans cette dernière, environ 28 % accueillent les documents de contexte et 72 % la réponse et la saisie. Il conserve plusieurs conversations multi-tours indépendantes, avec affichage progressif, annulation, copie et création de brouillon.
 - Outcom propose une réponse aussi bien dans une fenêtre de rédaction que dans une réponse intégrée au volet de lecture. Deux commandes combinées peuvent également créer un brouillon **Répondre** ou **Répondre à tous**, puis lancer Codex en arrière-plan. La zone de réponse située en haut du message, arrêtée à la signature native d'Outlook ou à la section du courrier cité, est traitée comme une ébauche et des orientations de l'utilisateur, puis remplacée par un message complet.
+- La commande reconnaît également un courrier transféré. Les champs actuels **À** et **Cc** définissent alors le véritable public : Codex rédige un message d'accompagnement destiné à ces personnes, pour information et, selon le contenu ou les orientations, pour préciser les actions et suites attendues. Il ne formule pas une réponse adressée à l'expéditeur d'origine.
+- La réponse générée reprend la langue du message le plus récent du fil : un fil anglais produit une réponse anglaise même si l'ébauche ou les orientations sont rédigées en français, sauf demande explicite d'une autre langue. Outcom vérifie si la signature conservée contient déjà une formule de politesse : il demande d'en générer exactement une lorsqu'elle manque et aucune lorsqu'elle est déjà présente, puis retire à l'insertion une éventuelle formule ou signature finale identique.
 - Le volet affiche dans une zone redimensionnable les demandes Codex actives ou récentes, y compris plusieurs générations indépendantes en parallèle. Il permet d'annuler la demande sélectionnée et d'effacer les tâches terminées.
+- Les groupes Outcom du ruban affichent sur deux lignes les compteurs **En cours** et **Terminées**. Ils utilisent exactement le même suivi que la zone Activités du volet et sont actualisés au démarrage, à la fin, à l'annulation ou au nettoyage d'une opération.
 - Le **Contexte Codex** centralise le modèle, la profondeur de raisonnement, le contexte de travail, le vocabulaire et les instructions transversales appliqués à toutes les conversations Outcom.
+- Son onglet **Comportement** permet d’autoriser un repli d’insertion : si la zone de réponse ne peut plus être remplacée précisément, Outcom conserve le contenu existant et ajoute la proposition tout en haut du brouillon. Le repli ne s’applique jamais à un message envoyé, fermé ou remplacé par un autre message.
 - Les profondeurs proposées sont recalculées à partir des capacités du modèle sélectionné ; l'option **Par défaut du modèle** laisse Codex appliquer sa valeur recommandée.
 - La zone des documents de contexte accepte le glisser-déposer depuis Windows et Outlook. Les documents sont présentés horizontalement sous forme de tuiles carrées de 82 pixels, avec une icône Windows de 64 pixels. Le nom complet est disponible dans l'infobulle, une croix superposée retire le document et un double-clic l'ouvre dans son application habituelle.
 - La dernière réponse peut être transformée en brouillon Outlook en texte brut, sans destinataire et sans envoi automatique.
@@ -102,9 +107,10 @@ Après une annulation, un délai dépassé ou une erreur de transport, Outcom ne
 1. Pour une réponse déjà en cours, utiliser **Proposer une réponse** dans le groupe **Outcom** de l'onglet **Message**. Outlook affiche cet onglet dans la fenêtre de rédaction isolée ou sous **Outils de composition** lorsque la réponse est intégrée au volet de lecture. La commande n'est pas affichée dans l'onglet permanent **Accueil (Courrier)**.
 2. Pour partir directement d'un courrier sélectionné, utiliser **Répondre et proposer** ou **Répondre à tous et proposer** dans **Accueil (Courrier) > Outcom** ou dans **Outcom > Réponses assistées**. Outcom crée et ouvre le brouillon correspondant, puis lance la proposition sans bloquer Outlook.
    Les mêmes commandes sont disponibles dans le groupe **Outcom** de l'onglet **Outils de message > Message** lorsqu'un courrier reçu est ouvert dans sa propre fenêtre.
-3. Facultatif : rédiger en haut du message une ébauche, des points à reprendre ou des instructions destinées à Codex. Outcom délimite automatiquement cette zone à l'aide de la signature native de l'éditeur Outlook ; à défaut, il s'arrête au début de la section du courrier cité. Cette partie est identifiée comme les orientations de l'utilisateur ; Codex doit les appliquer et produire un message complet, sans recopier dans le courrier final les consignes qui ne sont pas destinées au correspondant.
+3. Facultatif : rédiger en haut du message une ébauche, des points à reprendre ou des instructions destinées à Codex. Outcom délimite automatiquement cette zone à l'aide de la signature native de l'éditeur Outlook ; à défaut, il s'arrête au début de la section du courrier cité. Cette partie est placée seule dans un bloc d'orientations explicitement reconnu comme une demande de l'utilisateur ; le mode de génération impose d'identifier et d'appliquer chaque consigne actionnable pour produire le message complet, sans recopier dans le courrier final les consignes qui ne sont pas destinées au correspondant. La langue de ces orientations n'impose pas celle de la réponse : celle-ci suit le message le plus récent du fil, sauf consigne linguistique explicite. Lorsqu'une section citée est visible dans le composeur, elle devient systématiquement le message principal auquel répondre, même si l'API Conversation d'Outlook renvoie un autre élément.
+   Dans un transfert, Outcom détecte l'action Outlook ou les préfixes usuels `TR`, `FW` et `FWD`, puis transmet les valeurs visibles des champs **À** et **Cc**. Le texte généré s'adresse à ces destinataires et présente le courrier transféré comme information, action ou suite à traiter. Sa langue suit d'abord une consigne explicite, puis celle de l'ébauche et enfin celle de l'interface utilisateur ; la langue du courrier transféré ne l'impose pas automatiquement.
 4. L'état de la demande et son éventuelle annulation sont accessibles dans la zone **Activité Codex** du volet Outcom.
-5. Si le même brouillon est toujours actif, non envoyé et que la zone de réponse n'a pas changé, le message complet généré remplace cette zone. La signature détectée par Outlook, sa mise en forme et les citations restent en place ; Outcom n'enregistre ni n'envoie le message automatiquement. Si le projet est réellement modifié pendant la génération, la fenêtre fermée, la réponse intégrée remplacée ou le message envoyé, aucune insertion tardive n'est effectuée.
+5. Si le même brouillon est toujours actif, non envoyé et que la zone de réponse n'a pas changé, le message complet généré remplace cette zone. La signature détectée par Outlook, sa mise en forme et les citations restent en place. Outcom inspecte le début de cette signature : si elle contient déjà une formule de politesse, Codex ne doit pas en ajouter ; sinon, il doit en produire exactement une dans la langue de la réponse. Juste avant l'insertion, Outcom supprime aussi une formule ou une signature finale identique au début de la signature existante. Si la zone a changé et que le repli est activé dans l'onglet **Comportement**, la proposition est ajoutée au début sans effacer les modifications. Outcom n'enregistre ni n'envoie le message automatiquement. Une fenêtre fermée, une réponse intégrée remplacée ou un message envoyé interdit toujours toute insertion tardive.
 
 Cette commande utilise le modèle, la profondeur de raisonnement et les directives du **Contexte Codex** général. Si Outlook ne permet pas d'énumérer la conversation, Codex reçoit uniquement le corps actuel du brouillon, qui contient généralement l'historique cité de la réponse.
 
@@ -121,17 +127,41 @@ L'authentification est isolée de l'installation Codex personnelle de l'utilisat
 Outcom cherche `codex.exe` dans cet ordre :
 
 1. le chemin complet défini par la variable d'environnement `OUTCOM_CODEX_PATH` ;
-2. le runtime épinglé `%LOCALAPPDATA%\Outcom\CodexRuntime\codex.exe` ;
-3. la commande `codex.exe` disponible dans `PATH` ;
-4. le runtime de la dernière extension VS Code ou VS Code Insiders `openai.chatgpt-*` installée.
+2. le runtime épinglé placé dans `CodexRuntime\codex.exe` à côté de l'assembly Outcom ;
+3. le runtime épinglé `%LOCALAPPDATA%\Outcom\CodexRuntime\codex.exe` ;
+4. la commande `codex.exe` disponible dans `PATH` ;
+5. le runtime de la dernière extension VS Code ou VS Code Insiders `openai.chatgpt-*` installée.
 
-La version actuellement validée est **`codex-cli 0.144.0-alpha.4`**. Pour un déploiement reproductible, fournir une version testée dans `CodexRuntime` ou définir `OUTCOM_CODEX_PATH`, au lieu de dépendre durablement du fichier interne d'une extension VS Code. Après modification d'une variable d'environnement, redémarrer Outlook.
+La version destinée à la distribution est épinglée à **`codex-cli 0.144.6`** pour **Windows x64** dans `Outcom.AddIn/CodexRuntime.json`. Outcom vérifie la version et le SHA-256 du runtime distribué avant de le lancer. `OUTCOM_CODEX_PATH`, le `PATH` et l'extension VS Code restent des solutions de développement explicites, mais ne constituent pas le runtime reproductible du paquet.
+
+### Préparer le runtime de distribution
+
+Le binaire n'est pas stocké dans Git. La commande suivante télécharge l'archive de la release officielle OpenAI, vérifie le SHA-256 publié, extrait le binaire, vérifie une seconde empreinte et sa signature Authenticode OpenAI, contrôle l'architecture PE x64 et la version, puis réalise un handshake `initialize` avec exactement les options `app-server` sécurisées d'Outcom :
+
+```powershell
+.\tools\Prepare-CodexRuntime.ps1
+```
+
+Le résultat est placé dans `artifacts\CodexRuntime` et contient :
+
+- `codex.exe`, renommé depuis l'artefact officiel Windows x64 ;
+- `CodexRuntime.json`, manifeste de provenance et d'intégrité ;
+- `codex-runtime.validation.json`, preuve datée du contrôle local ;
+- `Codex-CLI-LICENSE.txt`, licence Apache 2.0 du tag distribué.
+
+Pour installer cette même version dans le profil Windows courant :
+
+```powershell
+.\tools\Prepare-CodexRuntime.ps1 -InstallForCurrentUser
+```
+
+Le dossier cible est alors `%LOCALAPPDATA%\Outcom\CodexRuntime`. Un installateur Outcom doit reprendre les quatre fichiers préparés, conserver la licence Codex CLI et installer `codex.exe` dans ce dossier ou dans un sous-dossier `CodexRuntime` à côté de l'assembly du complément. Les mentions de tiers sont regroupées dans `THIRD-PARTY-NOTICES.md`.
 
 ### Périmètre de sécurité actuel
 
 La connexion, sa gestion et son test ne transmettent aucun contenu Outlook. Dans le volet, seul le texte saisi est envoyé par défaut. Un document n'est ajouté qu'après son dépôt explicite dans la zone de contexte. Lors du prochain clic sur **Envoyer**, Outcom extrait localement une représentation textuelle bornée, l'inclut dans la demande, puis copie également le fichier complet dans un sous-dossier isolé propre à la conversation. Les originaux PDF, EML, MSG et Office ne sont donc jamais altérés. L'extraction prend en charge les couches texte PDF, les métadonnées et corps des courriels, DOCX, PPTX, XLSX, HTML et les principaux formats texte ; un PDF numérisé sans couche texte reste signalé comme tel et disponible sous sa forme native. La limite d'extraction est de 60 000 caractères par document et 160 000 caractères par envoi. La limite des fichiers reste de 50 Mo par fichier et 100 Mo par conversation ; la matérialisation initiale des fichiers virtuels fournis par Outlook reste limitée à 25 Mo par fichier. Ces copies sont supprimées au retrait, à la réinitialisation ou à la fermeture de la conversation, ainsi qu'à l'arrêt du client Codex.
 
-Le clic explicite sur **Proposer une réponse**, **Répondre et proposer** ou **Répondre à tous et proposer** transmet l'objet et la zone de réponse située en haut du brouillon en texte brut, limités à 50 000 caractères, ainsi que jusqu'à 20 messages récents du fil accessibles à Outlook, avec un maximum cumulé de 80 000 caractères. La limite de cette zone provient du signet de signature de l'éditeur Word d'Outlook ou, à défaut, de l'en-tête de la section du courrier cité ; aucun nom de personne n'est recherché. Le projet est traité comme une instruction explicite de l'utilisateur et le contenu du fil reste une donnée non fiable. Pour les messages du fil, seuls le nom affiché de l'expéditeur, la date et le corps en texte brut sont copiés. Les destinataires, adresses, pièces jointes, en-têtes techniques et HTML restent exclus. La génération est asynchrone : Outcom capture la zone directement dans l'éditeur Word, surveille l'envoi et, pour une fenêtre isolée, sa fermeture, puis vérifie de nouveau l'état envoyé, l'identité du brouillon actif et le texte visible de cette même zone juste avant le remplacement. Un message envoyé, fermé, remplacé ou réellement modifié n'est jamais altéré par une réponse tardive.
+Le clic explicite sur **Proposer une réponse**, **Répondre et proposer** ou **Répondre à tous et proposer** transmet l'objet, les valeurs visibles des champs actuels **À** et **Cc**, et la zone de réponse située en haut du brouillon en texte brut, limités respectivement à 12 000 caractères par liste de destinataires et à 50 000 caractères pour la zone de réponse. Le champ **Cci** n'est pas transmis. Outcom joint également le message source visible ou jusqu'à 20 messages récents du fil accessibles à Outlook, avec un maximum cumulé de 80 000 caractères. La limite de cette zone provient du signet de signature de l'éditeur Word d'Outlook ou, à défaut, de l'en-tête de la section du courrier cité ; aucun nom de personne n'est recherché pour cette délimitation. La détection accepte les espaces ordinaires ou insécables ainsi que les en-têtes Outlook français, anglais, portugais, espagnols, allemands et italiens. La section citée visible est prioritaire et transmise comme message principal en texte brut. Seule la zone de réponse est marquée comme instruction explicite de l'utilisateur ; les destinataires, l'objet et le contenu du fil restent des données non fiables mais constituent des sources documentaires obligatoires qui déterminent le public et le fond sans pouvoir neutraliser les orientations. Pour les éléments structurés issus de l'API Conversation, seuls le nom affiché de l'expéditeur, la date et le corps en texte brut sont copiés. Les pièces jointes, en-têtes techniques et HTML restent exclus. La génération est asynchrone : Outcom capture la zone directement dans l'éditeur Word, surveille l'envoi et, pour une fenêtre isolée, sa fermeture, puis vérifie de nouveau l'état envoyé, l'identité du brouillon actif et le texte visible de cette même zone juste avant le remplacement. Un message envoyé, fermé ou remplacé n'est jamais altéré par une réponse tardive. Si la zone de réponse a réellement changé, Outcom abandonne l'insertion ou, lorsque l'option de repli est active, ajoute la proposition au début sans écraser le contenu existant. Le journal indique uniquement si des orientations et un message source ont été détectés, sans enregistrer leur texte. Si aucun des deux n'est disponible, Outcom refuse de lancer une réponse hors contexte.
 
 Le contenu des documents est traité comme une donnée non fiable et non comme une instruction. Ajouter ou retirer un document déjà transmis réinitialise la conversation après confirmation, afin de ne pas mélanger silencieusement plusieurs contextes. Les conversations sont éphémères et conservées uniquement en mémoire par le processus local ; elles ne sont pas reprises automatiquement après un redémarrage de `app-server`.
 
@@ -183,7 +213,7 @@ Les fichiers `ThisAddIn.Designer.cs` et `ThisAddIn.Designer.xml` sont générés
 - [x] Ajouter un volet Codex multi-tour dans chaque fenêtre principale Outlook.
 - [x] Limiter la lecture Outlook au clic explicite et aux champs de courrier documentés.
 - [x] Ajouter la création locale d'un brouillon sans destinataire ni envoi automatique.
-- [ ] Épingler et valider le runtime Codex destiné à la distribution.
+- [x] Épingler et valider le runtime Codex destiné à la distribution.
 - [ ] Tester les cas où Outlook désactive un complément lent.
 - [ ] Préparer un MSI signé, distinct si un support Office 32 bits devient nécessaire.
 

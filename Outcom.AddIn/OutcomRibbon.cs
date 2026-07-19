@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using System.Runtime.InteropServices;
@@ -10,7 +11,7 @@ using Outlook = Microsoft.Office.Interop.Outlook;
 namespace Outcom.AddIn
 {
     [ComVisible(true)]
-    public sealed class OutcomRibbon : Office.IRibbonExtensibility
+    public sealed class OutcomRibbon : Office.IRibbonExtensibility, IDisposable
     {
         private const string ExplorerRibbonId = "Microsoft.Outlook.Explorer";
         private const string ReadRibbonId = "Microsoft.Outlook.Mail.Read";
@@ -20,7 +21,50 @@ namespace Outcom.AddIn
             "Outcom.AddIn.OutcomReadRibbon.xml";
         private const string ComposeRibbonResourceName =
             "Outcom.AddIn.OutcomComposeRibbon.xml";
+        private readonly CodexOperationTracker _operationTracker;
+        private readonly object _ribbonSyncRoot = new object();
+        private readonly List<Office.IRibbonUI> _ribbonUis =
+            new List<Office.IRibbonUI>();
+        private SynchronizationContext _ribbonSynchronizationContext;
+        private int _activeOperationCount;
+        private int _completedOperationCount;
+        private int _disposeState;
         private int operationInProgress;
+
+        internal OutcomRibbon(CodexOperationTracker operationTracker)
+        {
+            _operationTracker = operationTracker ??
+                throw new ArgumentNullException(nameof(operationTracker));
+            UpdateOperationCounts(_operationTracker.GetSnapshot());
+            _operationTracker.Changed += CodexOperationTracker_Changed;
+        }
+
+        public void Ribbon_Load(Office.IRibbonUI ribbonUi)
+        {
+            if (ribbonUi == null || Volatile.Read(ref _disposeState) != 0)
+            {
+                return;
+            }
+
+            lock (_ribbonSyncRoot)
+            {
+                _ribbonSynchronizationContext =
+                    SynchronizationContext.Current ?? _ribbonSynchronizationContext;
+                _ribbonUis.Add(ribbonUi);
+            }
+        }
+
+        public string GetActiveOperationsLabel(Office.IRibbonControl control)
+        {
+            return "En cours : " +
+                Volatile.Read(ref _activeOperationCount).ToString();
+        }
+
+        public string GetCompletedOperationsLabel(Office.IRibbonControl control)
+        {
+            return "Terminées : " +
+                Volatile.Read(ref _completedOperationCount).ToString();
+        }
 
         public string GetCustomUI(string ribbonId)
         {
@@ -54,6 +98,93 @@ namespace Outcom.AddIn
                 using (var reader = new StreamReader(stream))
                 {
                     return reader.ReadToEnd();
+                }
+            }
+        }
+
+        private void CodexOperationTracker_Changed(
+            object sender,
+            CodexOperationChangedEventArgs e)
+        {
+            if (Volatile.Read(ref _disposeState) != 0)
+            {
+                return;
+            }
+
+            UpdateOperationCounts(e == null ? null : e.Operations);
+            SynchronizationContext synchronizationContext;
+            lock (_ribbonSyncRoot)
+            {
+                synchronizationContext = _ribbonSynchronizationContext;
+            }
+
+            if (synchronizationContext != null &&
+                synchronizationContext != SynchronizationContext.Current)
+            {
+                synchronizationContext.Post(
+                    unused => InvalidateRibbonCounters(),
+                    null);
+                return;
+            }
+
+            InvalidateRibbonCounters();
+        }
+
+        private void UpdateOperationCounts(
+            IReadOnlyList<CodexOperationInfo> operations)
+        {
+            int activeCount = 0;
+            int completedCount = 0;
+            if (operations != null)
+            {
+                foreach (CodexOperationInfo operation in operations)
+                {
+                    if (operation != null && operation.IsActive)
+                    {
+                        activeCount++;
+                    }
+                    else if (operation != null)
+                    {
+                        completedCount++;
+                    }
+                }
+            }
+
+            Interlocked.Exchange(ref _activeOperationCount, activeCount);
+            Interlocked.Exchange(ref _completedOperationCount, completedCount);
+        }
+
+        private void InvalidateRibbonCounters()
+        {
+            if (Volatile.Read(ref _disposeState) != 0)
+            {
+                return;
+            }
+
+            List<Office.IRibbonUI> ribbonUis;
+            lock (_ribbonSyncRoot)
+            {
+                ribbonUis = new List<Office.IRibbonUI>(_ribbonUis);
+            }
+
+            foreach (Office.IRibbonUI ribbonUi in ribbonUis)
+            {
+                try
+                {
+                    ribbonUi.Invalidate();
+                }
+                catch (Exception exception)
+                {
+                    if (exception is OutOfMemoryException ||
+                        exception is StackOverflowException)
+                    {
+                        throw;
+                    }
+
+                    lock (_ribbonSyncRoot)
+                    {
+                        _ribbonUis.Remove(ribbonUi);
+                    }
                 }
             }
         }
@@ -379,6 +510,36 @@ namespace Outcom.AddIn
             }
         }
 
+        public void OpenAbout(Office.IRibbonControl control)
+        {
+            try
+            {
+                IWin32Window owner = GetOutlookWindowOwner(
+                    control == null ? null : control.Context);
+                using (var form = new OutcomAboutForm())
+                {
+                    if (owner == null)
+                    {
+                        form.ShowDialog();
+                    }
+                    else
+                    {
+                        form.ShowDialog(owner);
+                    }
+                }
+            }
+            catch (Exception exception)
+            {
+                LocalLogger.Error(
+                    "Impossible d’ouvrir la fenêtre À propos (" +
+                    exception.GetType().Name + ").");
+                ShowMessage(
+                    GetOutlookWindowOwner(),
+                    "La fenêtre À propos d’Outcom n’a pas pu être ouverte.",
+                    MessageBoxIcon.Error);
+            }
+        }
+
         public async void TestCodexConnection(Office.IRibbonControl control)
         {
             IWin32Window owner = GetOutlookWindowOwner();
@@ -618,6 +779,21 @@ namespace Outcom.AddIn
             }
             catch (Exception)
             {
+            }
+        }
+
+        public void Dispose()
+        {
+            if (Interlocked.Exchange(ref _disposeState, 1) != 0)
+            {
+                return;
+            }
+
+            _operationTracker.Changed -= CodexOperationTracker_Changed;
+            lock (_ribbonSyncRoot)
+            {
+                _ribbonUis.Clear();
+                _ribbonSynchronizationContext = null;
             }
         }
 

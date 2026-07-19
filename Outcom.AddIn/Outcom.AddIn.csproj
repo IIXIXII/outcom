@@ -27,6 +27,8 @@
     <RootNamespace>Outcom.AddIn</RootNamespace>
     <AssemblyName>Outcom.AddIn</AssemblyName>
     <ApplicationIcon>Assets\Outcom.ico</ApplicationIcon>
+    <OutcomVersion Condition="'$(OutcomVersion)' == ''">0.1.0</OutcomVersion>
+    <ApplicationVersion>$(OutcomVersion).0</ApplicationVersion>
     <LoadBehavior>3</LoadBehavior>
     <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
     <DefineConstants>VSTO40</DefineConstants>
@@ -207,6 +209,7 @@
     <Compile Include="DocumentContextExtractor.cs" />
     <Compile Include="CodexExecutableLocator.cs" />
     <Compile Include="CodexOperationTracker.cs" />
+    <Compile Include="CodexRuntimeManifest.cs" />
     <Compile Include="CodexService.cs" />
     <Compile Include="CodexTaskPaneControl.cs">
       <SubType>Code</SubType>
@@ -216,6 +219,10 @@
     <Compile Include="OutlookMailContext.cs" />
     <Compile Include="OutlookVirtualFileDrop.cs" />
     <Compile Include="OutlookComposeContext.cs" />
+    <Compile Include="OutcomAboutForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="OutcomBuildInfo.cs" />
     <Compile Include="OutcomGlobalContext.cs" />
     <Compile Include="OutcomBranding.cs" />
     <Compile Include="OutcomGlobalContextForm.cs">
@@ -227,6 +234,9 @@
     </Compile>
     <EmbeddedResource Include="Assets\Outcom.ico">
       <LogicalName>Outcom.AddIn.Assets.Outcom.ico</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="CodexRuntime.json">
+      <LogicalName>Outcom.AddIn.CodexRuntime.json</LogicalName>
     </EmbeddedResource>
     <EmbeddedResource Include="OutcomRibbon.xml" />
     <EmbeddedResource Include="OutcomReadRibbon.xml" />
@@ -278,6 +288,36 @@
     <ManifestKeyFile Condition="'$(OUTCOM_MANIFEST_KEY_FILE)' == ''">Outcom.AddIn_2_TemporaryKey.pfx</ManifestKeyFile>
     <ManifestKeyFile Condition="'$(OUTCOM_MANIFEST_KEY_FILE)' != ''">$(OUTCOM_MANIFEST_KEY_FILE)</ManifestKeyFile>
   </PropertyGroup>
+  <Target Name="GenerateOutcomBuildMetadata" BeforeTargets="CoreCompile">
+    <PropertyGroup>
+      <OutcomBuildDateUtc>$([System.DateTime]::UtcNow.ToString('yyyy-MM-ddTHH:mm:ss.fffZ'))</OutcomBuildDateUtc>
+    </PropertyGroup>
+    <ItemGroup>
+      <OutcomAssemblyAttribute Include="System.Reflection.AssemblyVersionAttribute">
+        <_Parameter1>$(OutcomVersion).0</_Parameter1>
+      </OutcomAssemblyAttribute>
+      <OutcomAssemblyAttribute Include="System.Reflection.AssemblyFileVersionAttribute">
+        <_Parameter1>$(OutcomVersion).0</_Parameter1>
+      </OutcomAssemblyAttribute>
+      <OutcomAssemblyAttribute Include="System.Reflection.AssemblyInformationalVersionAttribute">
+        <_Parameter1>$(OutcomVersion)</_Parameter1>
+      </OutcomAssemblyAttribute>
+      <OutcomAssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+        <_Parameter1>BuildDateUtc</_Parameter1>
+        <_Parameter2>$(OutcomBuildDateUtc)</_Parameter2>
+      </OutcomAssemblyAttribute>
+      <OutcomAssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+        <_Parameter1>BuildConfiguration</_Parameter1>
+        <_Parameter2>$(Configuration)</_Parameter2>
+      </OutcomAssemblyAttribute>
+    </ItemGroup>
+    <WriteCodeFragment
+      AssemblyAttributes="@(OutcomAssemblyAttribute)"
+      Language="C#"
+      OutputFile="$(IntermediateOutputPath)OutcomBuildMetadata.cs">
+      <Output TaskParameter="OutputFile" ItemName="Compile" />
+    </WriteCodeFragment>
+  </Target>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- Include additional build rules for an Office application add-in. -->
   <Import Project="$(VSToolsPath)\OfficeTools\Microsoft.VisualStudio.Tools.Office.targets" Condition="'$(VSToolsPath)' != ''" />

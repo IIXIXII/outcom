@@ -12,10 +12,17 @@ namespace Outcom.AddIn
     /// </summary>
     internal sealed class OutcomGlobalContext
     {
+        internal const bool DefaultInsertProposalAtBeginningOnConflict = true;
         internal const int MaximumSectionLength = 12000;
         internal const int MaximumTotalLength = 30000;
         internal const int MaximumModelIdLength = 200;
         internal const int MaximumReasoningEffortLength = 64;
+
+        public OutcomGlobalContext()
+        {
+            InsertProposalAtBeginningOnConflict =
+                DefaultInsertProposalAtBeginningOnConflict;
+        }
 
         public string WorkContext { get; set; }
 
@@ -27,6 +34,8 @@ namespace Outcom.AddIn
 
         public string ReasoningEffort { get; set; }
 
+        public bool InsertProposalAtBeginningOnConflict { get; set; }
+
         internal bool IsEmpty
         {
             get
@@ -35,7 +44,9 @@ namespace Outcom.AddIn
                     string.IsNullOrWhiteSpace(VocabularyGuidelines) &&
                     string.IsNullOrWhiteSpace(CrossConversationInstructions) &&
                     string.IsNullOrWhiteSpace(ModelId) &&
-                    string.IsNullOrWhiteSpace(ReasoningEffort);
+                    string.IsNullOrWhiteSpace(ReasoningEffort) &&
+                    InsertProposalAtBeginningOnConflict ==
+                        DefaultInsertProposalAtBeginningOnConflict;
             }
         }
 
@@ -71,7 +82,9 @@ namespace Outcom.AddIn
                 VocabularyGuidelines = VocabularyGuidelines,
                 CrossConversationInstructions = CrossConversationInstructions,
                 ModelId = ModelId,
-                ReasoningEffort = ReasoningEffort
+                ReasoningEffort = ReasoningEffort,
+                InsertProposalAtBeginningOnConflict =
+                    InsertProposalAtBeginningOnConflict
             };
         }
 
@@ -88,7 +101,9 @@ namespace Outcom.AddIn
                     other.CrossConversationInstructions,
                     StringComparison.Ordinal) &&
                 string.Equals(ModelId, other.ModelId, StringComparison.Ordinal) &&
-                string.Equals(ReasoningEffort, other.ReasoningEffort, StringComparison.Ordinal);
+                string.Equals(ReasoningEffort, other.ReasoningEffort, StringComparison.Ordinal) &&
+                InsertProposalAtBeginningOnConflict ==
+                    other.InsertProposalAtBeginningOnConflict;
         }
 
         internal static OutcomGlobalContext ValidateAndNormalize(OutcomGlobalContext value)
@@ -123,7 +138,9 @@ namespace Outcom.AddIn
                 VocabularyGuidelines = vocabulary,
                 CrossConversationInstructions = instructions,
                 ModelId = modelId,
-                ReasoningEffort = reasoningEffort
+                ReasoningEffort = reasoningEffort,
+                InsertProposalAtBeginningOnConflict =
+                    context.InsertProposalAtBeginningOnConflict
             };
         }
 

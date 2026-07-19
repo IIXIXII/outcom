@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "version": "0.144.6",
+  "cliVersion": "codex-cli 0.144.6",
+  "releaseTag": "rust-v0.144.6",
+  "platform": "x86_64-pc-windows-msvc",
+  "peMachine": "0x8664",
+  "assetName": "codex-x86_64-pc-windows-msvc.exe.zip",
+  "assetSha256": "0048604040fe61fa6163238fb0fcbda79e6bc465a8eecafc8f5ae8e4b69f77fd",
+  "executableName": "codex-x86_64-pc-windows-msvc.exe",
+  "executableSha256": "4b76ded066d0239115ca97473d010c92072bc5c5550a45dd7cbebe1e9eb956a7",
+  "authenticodePublisher": "OpenAI OpCo, LLC",
+  "downloadUrl": "https://github.com/openai/codex/releases/download/rust-v0.144.6/codex-x86_64-pc-windows-msvc.exe.zip",
+  "releaseUrl": "https://github.com/openai/codex/releases/tag/rust-v0.144.6",
+  "licenseUrl": "https://raw.githubusercontent.com/openai/codex/rust-v0.144.6/LICENSE",
+  "licenseSha256": "d17f227e4df5da1600391338865ce0f3055211760a36688f816941d58232d8dc",
+  "validatedOn": "2026-07-19",
+  "protocol": "app-server-stdio"
+}

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 
 namespace Outcom.AddIn
@@ -21,10 +22,16 @@ namespace Outcom.AddIn
                     "ou définissez OUTCOM_CODEX_PATH vers une version validée de codex.exe.");
             }
 
+            string version = ReadVersion(executablePath);
+            if (CodexRuntimeManifest.IsPinnedInstallationPath(executablePath))
+            {
+                CodexRuntimeManifest.Current.ValidateExecutable(executablePath, version);
+            }
+
             return new CodexExecutableInfo
             {
                 Path = executablePath,
-                Version = ReadVersion(executablePath)
+                Version = version
             };
         }
 
@@ -45,6 +52,20 @@ namespace Outcom.AddIn
             if (candidate != null)
             {
                 return candidate;
+            }
+
+            string assemblyDirectory = Path.GetDirectoryName(
+                Assembly.GetExecutingAssembly().Location);
+            if (!string.IsNullOrWhiteSpace(assemblyDirectory))
+            {
+                candidate = NormalizeCandidate(Path.Combine(
+                    assemblyDirectory,
+                    "CodexRuntime",
+                    "codex.exe"));
+                if (candidate != null)
+                {
+                    return candidate;
+                }
             }
 
             string localApplicationData = Environment.GetFolderPath(

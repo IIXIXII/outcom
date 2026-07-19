@@ -15,6 +15,12 @@ function Find-OutcomCodexExecutable {
         }
     }
 
+    $preparedRuntimePath = Join-Path $PSScriptRoot '..\artifacts\CodexRuntime\codex.exe'
+    $candidates += [pscustomobject]@{
+        Path = $preparedRuntimePath
+        Source = 'runtime Outcom préparé'
+    }
+
     if (-not [string]::IsNullOrWhiteSpace($env:LOCALAPPDATA)) {
         $candidates += [pscustomobject]@{
             Path = Join-Path $env:LOCALAPPDATA 'Outcom\CodexRuntime\codex.exe'
@@ -125,6 +131,15 @@ function Get-OutcomCodexVersion {
     }
 }
 
+$runtimeManifestPath = Join-Path $PSScriptRoot '..\Outcom.AddIn\CodexRuntime.json'
+$runtimeManifest = Get-Content -LiteralPath $runtimeManifestPath -Raw -Encoding UTF8 |
+    ConvertFrom-Json
+if ($runtimeManifest.schemaVersion -ne 1 -or
+    [string]::IsNullOrWhiteSpace($runtimeManifest.cliVersion) -or
+    [string]::IsNullOrWhiteSpace($runtimeManifest.executableSha256)) {
+    throw 'Le manifeste du runtime Codex épinglé est invalide.'
+}
+
 Write-Host 'Outcom - vérification du poste de développement' -ForegroundColor Cyan
 
 $officeConfigurationPath = 'HKLM:\SOFTWARE\Microsoft\Office\ClickToRun\Configuration'
@@ -143,7 +158,7 @@ if (Test-Path $outlookPath) {
 }
 
 $codex = Find-OutcomCodexExecutable
-$validatedCodexVersion = 'codex-cli 0.144.0-alpha.4'
+$validatedCodexVersion = $runtimeManifest.cliVersion
 if (-not $codex) {
     Write-Warning 'Codex non détecté. La compilation reste possible, mais la connexion ChatGPT d''Outcom nécessitera Codex CLI, l''extension Codex pour VS Code ou OUTCOM_CODEX_PATH.'
 } else {
@@ -159,6 +174,14 @@ if (-not $codex) {
             Write-Host "[OK] Codex : $versionText" -ForegroundColor Green
             if ($versionText -ne $validatedCodexVersion) {
                 Write-Warning "La version validée pour Outcom est $validatedCodexVersion ; vérifiez la compatibilité de codex app-server avant distribution."
+            } elseif ($codex.Source -like 'runtime Outcom*') {
+                $actualHash = (Get-FileHash -LiteralPath $codexPath -Algorithm SHA256).
+                    Hash.ToLowerInvariant()
+                if ($actualHash -ne $runtimeManifest.executableSha256.ToLowerInvariant()) {
+                    Write-Warning 'Le runtime Outcom a la bonne version, mais son empreinte SHA-256 est invalide.'
+                } else {
+                    Write-Host '[OK] Empreinte du runtime Outcom validée.' -ForegroundColor Green
+                }
             }
         } else {
             Write-Warning "Codex a été détecté, mais sa version n'a pas pu être lue (code $versionExitCode)."
