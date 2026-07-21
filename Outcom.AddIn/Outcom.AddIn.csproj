@@ -282,11 +282,11 @@
     <SignManifests>true</SignManifests>
   </PropertyGroup>
   <PropertyGroup>
-    <ManifestCertificateThumbprint Condition="'$(OUTCOM_MANIFEST_CERTIFICATE_THUMBPRINT)' == ''">796C8AA198C78F386B12816F8F912385C17430CD</ManifestCertificateThumbprint>
+    <ManifestCertificateThumbprint Condition="'$(OUTCOM_MANIFEST_CERTIFICATE_THUMBPRINT)' == '' and '$(OUTCOM_MANIFEST_KEY_FILE)' == ''">796C8AA198C78F386B12816F8F912385C17430CD</ManifestCertificateThumbprint>
     <ManifestCertificateThumbprint Condition="'$(OUTCOM_MANIFEST_CERTIFICATE_THUMBPRINT)' != ''">$(OUTCOM_MANIFEST_CERTIFICATE_THUMBPRINT)</ManifestCertificateThumbprint>
   </PropertyGroup>
   <PropertyGroup>
-    <ManifestKeyFile Condition="'$(OUTCOM_MANIFEST_KEY_FILE)' == ''">Outcom.AddIn_2_TemporaryKey.pfx</ManifestKeyFile>
+    <ManifestKeyFile Condition="'$(OUTCOM_MANIFEST_KEY_FILE)' == '' and '$(OUTCOM_MANIFEST_CERTIFICATE_THUMBPRINT)' == ''">Outcom.AddIn_2_TemporaryKey.pfx</ManifestKeyFile>
     <ManifestKeyFile Condition="'$(OUTCOM_MANIFEST_KEY_FILE)' != ''">$(OUTCOM_MANIFEST_KEY_FILE)</ManifestKeyFile>
   </PropertyGroup>
   <Target Name="GenerateOutcomBuildMetadata" BeforeTargets="CoreCompile">

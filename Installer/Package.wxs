@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+  <Package
+    Name="Outcom"
+    Manufacturer="Outcom"
+    Version="$(var.OutcomVersion)"
+    Language="1036"
+    Scope="perMachine"
+    InstallerVersion="500"
+    UpgradeCode="{86CA35E2-E30E-44FB-941D-229CD04EF8FE}">
+
+    <SummaryInformation
+      Description="Complément Outcom pour Outlook classique"
+      Manufacturer="Outcom" />
+
+    <MajorUpgrade
+      DowngradeErrorMessage="Une version plus récente d'Outcom est déjà installée."
+      Schedule="afterInstallInitialize" />
+    <MediaTemplate EmbedCab="yes" CompressionLevel="mszip" />
+
+    <Icon Id="OutcomIcon" SourceFile="$(sys.SOURCEFILEDIR)..\Outcom.AddIn\Assets\Outcom.ico" />
+    <Property Id="ARPPRODUCTICON" Value="OutcomIcon" />
+    <Property Id="ARPCONTACT" Value="Contributeurs Outcom" />
+
+    <Property Id="OUTLOOKINSTALLROOT" Secure="yes">
+      <RegistrySearch
+        Id="FindOutlook64"
+        Root="HKLM"
+        Key="SOFTWARE\Microsoft\Office\16.0\Outlook\InstallRoot"
+        Name="Path"
+        Type="raw"
+        Bitness="always64" />
+    </Property>
+    <Property Id="NETFRAMEWORK48" Secure="yes">
+      <RegistrySearch
+        Id="FindNetFramework48"
+        Root="HKLM"
+        Key="SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Full"
+        Name="Release"
+        Type="raw"
+        Bitness="always64" />
+    </Property>
+    <Property Id="VSTORUNTIME" Secure="yes">
+      <RegistrySearch
+        Id="FindVstoRuntime"
+        Root="HKLM"
+        Key="SOFTWARE\Microsoft\VSTO Runtime Setup\v4R"
+        Name="VSTORFeature_CLR40"
+        Type="raw"
+        Bitness="always32" />
+    </Property>
+
+    <Launch
+      Condition="Installed OR VersionNT64"
+      Message="Outcom nécessite une version 64 bits de Windows." />
+    <Launch
+      Condition="Installed OR OUTLOOKINSTALLROOT"
+      Message="Outcom nécessite Outlook classique 2016, 2019, 2021, 2024 ou Microsoft 365 en version 64 bits." />
+    <Launch
+      Condition="Installed OR NETFRAMEWORK48 &gt;= &quot;#528040&quot;"
+      Message="Outcom nécessite Microsoft .NET Framework 4.8 ou une version ultérieure." />
+    <Launch
+      Condition="Installed OR VSTORUNTIME"
+      Message="Outcom nécessite Microsoft Visual Studio 2010 Tools for Office Runtime." />
+
+    <StandardDirectory Id="ProgramFiles64Folder">
+      <Directory Id="INSTALLFOLDER" Name="Outcom" />
+    </StandardDirectory>
+
+    <Files
+      Include="$(var.StageDirectory)\**"
+      Directory="INSTALLFOLDER" />
+
+    <Component
+      Id="OutlookAddInRegistration"
+      Directory="INSTALLFOLDER"
+      Guid="{63DFD941-47A4-4E0E-BAD2-3A453C4B0383}"
+      Bitness="always64">
+      <RegistryKey
+        Root="HKLM"
+        Key="Software\Microsoft\Office\Outlook\Addins\Outcom.AddIn">
+        <RegistryValue
+          Name="Description"
+          Type="string"
+          Value="Complément Outlook classique connecté à ChatGPT par Codex." />
+        <RegistryValue
+          Name="FriendlyName"
+          Type="string"
+          Value="Outcom" />
+        <RegistryValue
+          Name="LoadBehavior"
+          Type="integer"
+          Value="3" />
+        <RegistryValue
+          Name="Manifest"
+          Type="string"
+          Value="file:///[INSTALLFOLDER]Outcom.AddIn.vsto|vstolocal"
+          KeyPath="yes" />
+      </RegistryKey>
+    </Component>
+  </Package>
+</Wix>

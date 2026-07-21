@@ -1,0 +1,14 @@
+<Project Sdk="WixToolset.Sdk/5.0.2">
+  <PropertyGroup>
+    <InstallerPlatform>x64</InstallerPlatform>
+    <OutputType>Package</OutputType>
+    <OutcomVersion Condition="'$(OutcomVersion)' == ''">0.1.0</OutcomVersion>
+    <StageDirectory Condition="'$(StageDirectory)' == ''">$(MSBuildThisFileDirectory)..\artifacts\Installer\stage</StageDirectory>
+    <DefineConstants>OutcomVersion=$(OutcomVersion);StageDirectory=$(StageDirectory)</DefineConstants>
+    <OutputName>Outcom-$(OutcomVersion)-x64</OutputName>
+    <DefaultCompressionLevel>mszip</DefaultCompressionLevel>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <!-- ICE validation requires an elevated interactive Windows Installer context. -->
+    <SuppressValidation Condition="'$(SuppressValidation)' == ''">true</SuppressValidation>
+  </PropertyGroup>
+</Project>

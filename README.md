@@ -13,7 +13,7 @@ Ce choix convient à Outlook LTSC 2024 lorsqu'une intégration locale au client 
 - VSTO fonctionne avec Outlook classique, pas avec le nouvel Outlook pour Windows.
 - VSTO nécessite .NET Framework ; ne pas choisir .NET, .NET Core ou .NET 8/9/10 pour le projet chargé dans Outlook.
 - Le poste détecté utilise Outlook LTSC 2024 **64 bits** (`ProPlus2024Volume`).
-- Une cible `Any CPU` convient généralement au développement VSTO ; les futurs installateurs devront tenir compte de l'architecture Office.
+- Une cible `Any CPU` convient au complément VSTO ; l'installateur MSI fourni cible uniquement Outlook et Windows x64. Aucun paquet Office 32 bits n'est prévu.
 
 ## Outils à installer
 
@@ -22,7 +22,7 @@ Installer **Visual Studio 2022 Community** (ou Professional/Enterprise), puis s�
 1. La charge de travail **Développement Office/SharePoint**.
 2. Les composants **Outils de développement Microsoft Office**.
 3. Le **pack de ciblage .NET Framework 4.8**.
-4. Facultatif pour plus tard : **Microsoft Visual Studio Installer Projects 2022**, utile pour produire un MSI.
+4. Le SDK .NET 6 ou ultérieur, utilisé par le projet WiX qui produit le MSI x64. WiX est restauré automatiquement par NuGet lors de la construction de l'installateur.
 
 Outlook doit être fermé pendant l'installation des outils Office.
 
@@ -227,6 +227,90 @@ Le projet VSTO signe ses manifestes. Le fichier PFX de développement est volont
 
 Les valeurs locales du projet peuvent être remplacées sans modifier le fichier `.csproj` avec `OUTCOM_MANIFEST_KEY_FILE` (chemin du PFX) et `OUTCOM_MANIFEST_CERTIFICATE_THUMBPRINT` (empreinte du certificat), ou avec les propriétés MSBuild `ManifestKeyFile` et `ManifestCertificateThumbprint`. Une version distribuée doit utiliser un certificat de signature de code géré par l'organisation ; le certificat temporaire sert uniquement au développement.
 
+### Construire le MSI x64 signé
+
+Le projet `Installer/Outcom.Installer.wixproj` utilise **WiX Toolset 5.0.2**, épinglé dans le dépôt. Le MSI est installé pour tous les utilisateurs, avec élévation administrative, dans `%ProgramFiles%\Outcom`. Il inscrit `Outcom.AddIn` dans la vue 64 bits de `HKLM\Software\Microsoft\Office\Outlook\Addins`, avec `LoadBehavior=3` et un manifeste local terminé par `|vstolocal`.
+
+Le paquet embarque :
+
+- l'assembly Release, ses manifestes VSTO et toutes ses dépendances d'exécution, sans fichiers PDB ;
+- le runtime Codex Windows x64 épinglé et préalablement validé, sous `CodexRuntime` ;
+- la licence du projet, la licence Codex CLI et les mentions de tiers.
+
+Le MSI vérifie avant installation la présence de Windows x64, d'Outlook classique x64, de .NET Framework 4.8 et du runtime VSTO. Il ne télécharge aucun prérequis : leur déploiement reste sous le contrôle de l'organisation.
+
+#### Certificat autosigné pour validation locale
+
+Un certificat autosigné permet de tester localement la construction, la signature et l'installation du MSI. Il ne convient pas à une distribution publique et ne doit être déclaré comme fiable que sur des postes de développement maîtrisés.
+
+Créer un certificat de signature de code dans le magasin personnel de l'utilisateur courant :
+
+```powershell
+$cert = New-SelfSignedCertificate `
+    -Type CodeSigningCert `
+    -Subject 'CN=Outcom Development' `
+    -FriendlyName 'Outcom Development Code Signing' `
+    -CertStoreLocation 'Cert:\CurrentUser\My' `
+    -KeyAlgorithm RSA `
+    -KeyLength 3072 `
+    -HashAlgorithm SHA256 `
+    -KeyExportPolicy Exportable `
+    -NotAfter (Get-Date).AddYears(2)
+
+$cert.Thumbprint
+```
+
+Pour tester l'installation avec ce certificat, exporter uniquement sa partie publique puis l'ajouter aux magasins de confiance de l'utilisateur courant :
+
+```powershell
+$cerPath = Join-Path $env:TEMP 'Outcom-Development.cer'
+
+Export-Certificate -Cert $cert -FilePath $cerPath
+Import-Certificate -FilePath $cerPath -CertStoreLocation 'Cert:\CurrentUser\Root'
+Import-Certificate -FilePath $cerPath -CertStoreLocation 'Cert:\CurrentUser\TrustedPublisher'
+```
+
+Construire ensuite le MSI signé de test :
+
+```powershell
+$env:OUTCOM_SIGNING_CERTIFICATE_THUMBPRINT = $cert.Thumbprint
+.\tools\Build-SignedMsi.ps1
+```
+
+La clé privée exportable est acceptable pour ce scénario local uniquement. Elle ne doit pas être copiée dans le dépôt ni utilisée comme identité de distribution.
+
+#### Certificat de distribution
+
+Pour une diffusion interne, demander à la DSI un certificat Authenticode émis par la PKI de l'organisation. Pour une diffusion externe, utiliser un certificat délivré par une autorité publique reconnue ou un service de signature administré. Le certificat doit comporter l'usage étendu **Code Signing** (`1.3.6.1.5.5.7.3.3`) et sa clé privée doit idéalement être non exportable ou protégée matériellement.
+
+Importer le certificat avec sa clé privée dans le magasin **Personnel** de l'utilisateur Windows qui réalise la construction (`Cert:\CurrentUser\My`). Pour un déploiement interne, la DSI doit également diffuser la chaîne de certification et le certificat de l'éditeur dans les magasins appropriés des postes, par exemple avec une stratégie de groupe ou Intune. Ne pas stocker de PFX, de clé privée ni de mot de passe dans le dépôt.
+
+Définir ensuite son empreinte et, si nécessaire, le serveur d'horodatage RFC 3161 :
+
+```powershell
+$env:OUTCOM_SIGNING_CERTIFICATE_THUMBPRINT = '<empreinte SHA-1 du certificat>'
+$env:OUTCOM_TIMESTAMP_URL = 'http://timestamp.digicert.com'
+.\tools\Build-SignedMsi.ps1
+```
+
+Par défaut, ce même certificat signe les deux manifestes VSTO et le MSI. Une empreinte distincte peut être fournie dans `OUTCOM_MANIFEST_CERTIFICATE_THUMBPRINT`. Le script reconstruit Release, vérifie les signatures des manifestes avec `Mage.exe`, valide le runtime Codex, construit le MSI, contrôle directement ses tables `Property`, `File` et `Registry`, signe en SHA-256 avec horodatage RFC 3161, puis vérifie la signature avec `SignTool`.
+
+Les sorties sont placées sous `artifacts\Installer` :
+
+- `Outcom-<version>-x64.msi`, signé et distribuable ;
+- le fichier `.sha256` associé ;
+- `outcom-msi.validation.json`, qui conserve la version, l'architecture, les empreintes, le certificat et le résultat des contrôles.
+
+Pour valider uniquement la structure sur un poste dépourvu de certificat :
+
+```powershell
+.\tools\Build-SignedMsi.ps1 -SkipSigning
+```
+
+Cette commande produit explicitement `Outcom-<version>-x64-unsigned.msi` avec le certificat de manifeste de développement. Cet artefact ne doit jamais être distribué. La validation ICE complète peut être demandée depuis un terminal administrateur avec `-RunIceValidation` ; elle est désactivée par défaut car certaines stratégies Windows Installer l'interdisent aux processus non élevés.
+
+Fermer Outlook avant l'installation, la mise à niveau, la réparation ou la désinstallation. Le MSI prend en charge les mises à niveau majeures et refuse l'installation d'une version antérieure.
+
 ## Structure du dépôt
 
 ```text
@@ -239,7 +323,11 @@ Outcom.AddIn/
   OutcomRibbon.cs
   OutcomRibbon.xml
   ThisAddIn.cs
+Installer/
+  Outcom.Installer.wixproj
+  Package.wxs
 tools/
+  Build-SignedMsi.ps1
   Check-DevelopmentEnvironment.ps1
 ```
 
@@ -255,7 +343,8 @@ Les fichiers `ThisAddIn.Designer.cs` et `ThisAddIn.Designer.xml` sont générés
 - [x] Ajouter la création locale d'un brouillon sans destinataire ni envoi automatique.
 - [x] Épingler et valider le runtime Codex destiné à la distribution.
 - [x] Tester le comportement d'Outlook face à un complément lent et documenter sa récupération.
-- [ ] Préparer un MSI signé, distinct si un support Office 32 bits devient nécessaire.
+- [x] Préparer et valider la chaîne de construction du MSI x64.
+- [ ] Signer le MSI avec le certificat de l'organisation et valider installation, mise à niveau et désinstallation sur un poste propre.
 
 ## Documentation Microsoft
 
@@ -263,6 +352,8 @@ Les fichiers `ThisAddIn.Designer.cs` et `ThisAddIn.Designer.xml` sont générés
 - [Bien démarrer avec les compléments VSTO](https://learn.microsoft.com/visualstudio/vsto/getting-started-programming-vsto-add-ins)
 - [Architecture des compléments VSTO](https://learn.microsoft.com/visualstudio/vsto/architecture-of-vsto-add-ins)
 - [Déployer une solution VSTO avec Windows Installer](https://learn.microsoft.com/visualstudio/vsto/deploying-a-vsto-solution-by-using-windows-installer)
+- [Créer un certificat autosigné avec PowerShell](https://learn.microsoft.com/powershell/module/pki/new-selfsignedcertificate)
+- [Choisir une méthode de signature de code Windows](https://learn.microsoft.com/windows/apps/package-and-deploy/code-signing-options)
 - [Critères de performances des compléments Outlook](https://learn.microsoft.com/previous-versions/office/jj228679(v=office.15)#performance-criteria-for-keeping-add-ins-enabled)
 - [Réactiver un complément désactivé par Office](https://learn.microsoft.com/troubleshoot/outlook/performance/add-ins-are-user-re-enabled-after-being-disabled)
 
