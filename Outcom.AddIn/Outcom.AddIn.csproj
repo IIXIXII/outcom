@@ -225,6 +225,7 @@
     <Compile Include="OutcomBuildInfo.cs" />
     <Compile Include="OutcomGlobalContext.cs" />
     <Compile Include="OutcomBranding.cs" />
+    <Compile Include="OutcomPerformanceDiagnostics.cs" />
     <Compile Include="OutcomGlobalContextForm.cs">
       <SubType>Form</SubType>
     </Compile>

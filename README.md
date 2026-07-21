@@ -181,6 +181,46 @@ La création d'un brouillon est une action Outlook locale distincte de la géné
 
 La présence de Codex n'est pas nécessaire pour compiler le complément. Si le diagnostic affiche un avertissement Codex, installer Codex CLI, l'extension Codex pour VS Code, ou renseigner `OUTCOM_CODEX_PATH` avant de tester la connexion dans Outlook.
 
+### Tester la désactivation d'un complément lent
+
+Outlook classique mesure notamment le démarrage des compléments. Le seuil documenté est de 1 000 ms sur la médiane de cinq lancements successifs ; les mesures sont inscrites dans le journal Application avec l'événement Outlook 45. Selon la version d'Office, une désactivation pour performances peut produire l'événement 59, mais son absence ne suffit pas à conclure que le complément a été chargé. Outcom fournit un retard artificiel uniquement dans la configuration **Debug** : aucun code de ralentissement n'est inclus dans le comportement du build Release.
+
+1. Compiler et enregistrer la configuration Debug, puis fermer complètement Outlook.
+2. Préparer le test :
+
+   ```powershell
+   .\tools\Test-OutlookAddinResiliency.ps1 -Action Prepare
+   ```
+
+   Le script sauvegarde les valeurs Outcom qu'il va modifier sous `%LOCALAPPDATA%\Outcom\Diagnostics`, force `LoadBehavior=3`, configure un retard Debug de 2 000 ms et retire temporairement l'éventuelle exemption de performances d'Outcom. Il refuse de continuer si Outlook tourne, si Release est enregistré ou si une stratégie d'administration impose l'état du complément.
+3. Démarrer puis fermer Outlook normalement cinq fois. Ne pas tuer le processus. Au lancement suivant, vérifier la notification Outlook, **Fichier > Compléments COM lents et désactivés** et la présence du ruban Outcom. Certaines versions peuvent cesser de charger le complément sans l'afficher dans cette interface.
+4. Contrôler les mesures, l'éventuel événement 59 et surtout la présence d'Outcom dans les événements 45 des lancements suivants :
+
+   ```powershell
+   .\tools\Test-OutlookAddinResiliency.ps1 -Action Status
+   ```
+
+5. Fermer Outlook et restaurer obligatoirement l'état antérieur :
+
+   ```powershell
+   .\tools\Test-OutlookAddinResiliency.ps1 -Action Restore
+   ```
+
+6. Redémarrer Outlook et vérifier le retour du ruban ainsi qu'une nouvelle mesure normale dans l'événement 45. Si Outcom est proposé dans **Compléments COM lents et désactivés**, choisir **Toujours activer ce complément**. Sinon, vérifier **Fichier > Options > Compléments > Gérer : Compléments COM**. Dans un environnement Visual Studio, une recompilation ou un lancement avec `F5` réinscrit la solution VSTO lorsque Outlook conserve un état de chargement incohérent.
+
+Le script ne modifie jamais les valeurs binaires `DisabledItems`, susceptibles de concerner d'autres compléments. Si Outlook conserve exceptionnellement Outcom dans cette liste après restauration, le réactiver depuis **Fichier > Options > Compléments > Gérer : Éléments désactivés**, sans supprimer la clé de résilience complète.
+
+#### Résultat du test sur Office ProPlus 2024
+
+Le scénario a été exécuté le 21 juillet 2026 avec Office ProPlus 2024 Volume `16.0.17932.20842` x64 :
+
+- six démarrages artificiellement ralentis ont été mesurés entre 2 155 et 2 203 ms par les événements Outlook 45 ; la médiane des cinq dernières mesures était de 2 156 ms, au-dessus du seuil documenté de 1 000 ms ;
+- après le test, deux démarrages Outlook successifs n'ont plus mentionné Outcom dans leur événement 45 et le journal local n'a enregistré aucun démarrage du complément ;
+- Outlook n'a créé ni événement 59, ni entrée `DisabledItems` visible, et Outcom n'apparaissait pas dans l'interface des compléments désactivés ; `LoadBehavior` était pourtant resté à `3` ;
+- la recompilation et la réinscription VSTO ont rétabli le chargement ; le démarrage de contrôle a été mesuré à 172 ms, sans retard de test, contre une médiane normale de 219 ms avant le scénario.
+
+La conclusion est que cette version d'Outlook détecte bien le coût de démarrage et peut temporairement omettre le chargement d'un complément lent, mais ne matérialise pas nécessairement cet état par l'événement 59 ou par la liste visible des compléments désactivés. Pour le diagnostic, la présence du ProgID `Outcom.AddIn` dans l'événement 45 et la ligne de démarrage du journal `%LOCALAPPDATA%\Outcom\Logs\outcom.log` sont donc les contrôles déterminants.
+
 ### Certificat de signature du manifeste
 
 Le projet VSTO signe ses manifestes. Le fichier PFX de développement est volontairement ignoré par Git : une clé privée et son mot de passe ne doivent jamais être publiés dans le dépôt. Sur un nouveau poste ou dans une CI, il faut donc soit créer un certificat de test depuis **Propriétés du projet > Signature**, soit fournir un certificat injecté par le système de secrets.
@@ -214,7 +254,7 @@ Les fichiers `ThisAddIn.Designer.cs` et `ThisAddIn.Designer.xml` sont générés
 - [x] Limiter la lecture Outlook au clic explicite et aux champs de courrier documentés.
 - [x] Ajouter la création locale d'un brouillon sans destinataire ni envoi automatique.
 - [x] Épingler et valider le runtime Codex destiné à la distribution.
-- [ ] Tester les cas où Outlook désactive un complément lent.
+- [x] Tester le comportement d'Outlook face à un complément lent et documenter sa récupération.
 - [ ] Préparer un MSI signé, distinct si un support Office 32 bits devient nécessaire.
 
 ## Documentation Microsoft
@@ -223,6 +263,8 @@ Les fichiers `ThisAddIn.Designer.cs` et `ThisAddIn.Designer.xml` sont générés
 - [Bien démarrer avec les compléments VSTO](https://learn.microsoft.com/visualstudio/vsto/getting-started-programming-vsto-add-ins)
 - [Architecture des compléments VSTO](https://learn.microsoft.com/visualstudio/vsto/architecture-of-vsto-add-ins)
 - [Déployer une solution VSTO avec Windows Installer](https://learn.microsoft.com/visualstudio/vsto/deploying-a-vsto-solution-by-using-windows-installer)
+- [Critères de performances des compléments Outlook](https://learn.microsoft.com/previous-versions/office/jj228679(v=office.15)#performance-criteria-for-keeping-add-ins-enabled)
+- [Réactiver un complément désactivé par Office](https://learn.microsoft.com/troubleshoot/outlook/performance/add-ins-are-user-re-enabled-after-being-disabled)
 
 ## Documentation OpenAI
 

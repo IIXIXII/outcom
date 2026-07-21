@@ -123,6 +123,9 @@ namespace Outcom.AddIn
         private void ThisAddIn_Startup(object sender, EventArgs e)
         {
             LocalLogger.Info("Démarrage du complément.");
+#if DEBUG
+            OutcomPerformanceDiagnostics.ApplyStartupDelayIfConfigured();
+#endif
             ((Outlook.ApplicationEvents_11_Event)this.Application).Quit += Application_Quit;
         }
 
